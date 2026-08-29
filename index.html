@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3BR Rentals — North Portland</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #1a1712; color: #e8e0d0; font-size: 14px; }
+  h1 { padding: 16px 20px 4px; font-size: 18px; color: #f5e6c8; }
+  .subtitle { padding: 0 20px 14px; color: #9e9080; font-size: 12px; }
+  .section-label {
+    padding: 10px 20px 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: #b8995a; border-top: 1px solid #2e2820;
+    margin-top: 6px;
+  }
+  .section-label:first-child { border-top: none; margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: #201e18; color: #9e9080; font-size: 11px; font-weight: 600;
+    padding: 6px 8px; text-align: left; border-bottom: 1px solid #2e2820;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #252017; transition: background .1s; }
+  tbody tr:hover { background: #242018; }
+  tbody tr.archived { display: none; }
+  tbody tr.favorited td:first-child { color: #e8a030; }
+  td { padding: 7px 8px; vertical-align: middle; }
+  .btn-fav, .btn-arch {
+    background: none; border: none; cursor: pointer; font-size: 15px;
+    padding: 2px 4px; border-radius: 4px; line-height: 1;
+    transition: transform .1s;
+  }
+  .btn-fav:hover { transform: scale(1.3); }
+  .btn-arch { color: #6a5e50; }
+  .btn-arch:hover { color: #c06060; transform: scale(1.2); }
+  .btn-fav.active { color: #e8a030; }
+  .btn-fav.inactive { color: #504030; }
+  .rent { font-weight: 700; color: #e8e0d0; white-space: nowrap; }
+  .otd { color: #9e9080; white-space: nowrap; font-size: 12px; }
+  .beds { white-space: nowrap; }
+  .dist { text-align: center; color: #c8b890; white-space: nowrap; }
+  .addr { cursor: pointer; }
+  .addr a { color: #7ab8d8; text-decoration: none; }
+  .addr a:hover { text-decoration: underline; }
+  .addr a.primary-listing { display: inline-block; padding: 6px 0; font-weight: 700; }
+  .addr a.listing { color: #8bb890; font-size: 11px; margin-left: 6px; }
+  .badge {
+    display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 3px;
+    margin-left: 5px; vertical-align: middle; font-weight: 600;
+  }
+  .badge-cl { background: #6b3a1a; color: #e8a060; }
+  .badge-web { background: #1a3a4a; color: #6ab8d8; }
+  .badge-income { background: #3a1a1a; color: #e86060; }
+  .badge-utils { background: #1a3a1a; color: #60c870; }
+  .badge-fit { background: #1a3a2f; color: #7fd9bb; }
+  .badge-stretch { background: #4a381a; color: #f0c56f; }
+  .badge-miss { background: #3b3348; color: #cbb7f0; }
+  .badge-ref { background: #442222; color: #ef9a9a; }
+  .note { font-size: 11px; color: #806858; max-width: 220px; }
+  .fav-header {
+    padding: 8px 20px 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: #e8a030; display: none;
+  }
+  .fav-header.visible { display: block; }
+  .arch-toggle {
+    display: block; width: 100%; text-align: center; padding: 14px;
+    color: #6a5e50; font-size: 12px; cursor: pointer; border-top: 1px solid #2e2820;
+    background: none; border-left: none; border-right: none; border-bottom: none;
+  }
+  .arch-toggle:hover { color: #9e9080; }
+  .archived.show-archived { display: table-row; }
+  .archived.show-archived td { opacity: .45; }
+  .count-line { padding: 0 20px 12px; font-size: 12px; color: #706050; }
+</style>
+</head>
+<body>
+
+<h1>3BR Rental Search — PSU + High Maintenance Club</h1>
+<p class="subtitle">Primary clicks go to rental listings. Map links are separate. Budget target up to $2,500; stretch/max up to $2,650. Current scoring requires 3br/2ba+.</p>
+<p class="count-line" id="count-line"></p>
+
+<div class="fav-header" id="fav-header">⭐ Favorites</div>
+<table id="fav-table">
+  <thead id="fav-thead" style="display:none">
+    <tr>
+      <th></th><th></th><th>Rent</th><th>OTD est</th><th>Bed/Ba</th><th>Sqft</th>
+      <th>≈mi PSU</th><th>≈mi HMC</th><th>Type</th><th>Address</th><th>Notes</th>
+    </tr>
+  </thead>
+  <tbody id="fav-body"></tbody>
+</table>
+
+<div id="active-sections"></div>
+
+<div id="arch-section" style="display:none">
+  <div class="section-label" style="color:#6a5e50">Archived</div>
+  <table>
+    <tbody id="arch-body"></tbody>
+  </table>
+</div>
+
+<button class="arch-toggle" id="arch-btn" onclick="toggleArchived()">Show archived</button>
+
+<script>
+const FAV_KEY  = 'rentalFav3br';
+const ARCH_KEY = 'rentalArchive3br';
+const INITIAL_FAVS = [
+  '5026-Harvard-UnitC',
+  'PierPark-8660-Columbia',
+  '10033-Lombard',
+  '9322-Macrum-reference',
+  'FB-Shortstack-3325-Michigan',
+  'FB-9126-Seward-reference',
+];
+const INITIAL_ARCHS = [
+  'KearneyHouse-824-NW20th',
+  '2456-Vaughn-Apt3',
+  '2456-Vaughn-Apt4',
+  'CathedralVillage-6520-Salem',
+  '5329-Willamette',
+  '5777-Cecelia',
+  'RenaissanceCommons-2133-Argyle',
+  'Kentonwood-1575-Willis',
+];
+
+const LISTINGS = [
+  // ── NORTHWEST / SLABTOWN 97209-97210 ──────────────
+  { id:'KearneyHouse-824-NW20th', address:'824 NW 20th Ave, Portland, OR 97209',
+    beds:3, baths:2, sqft:945, rent:1783, neighborhood:'Northwest / Slabtown', zip:'97209',
+    type:'Apartment', psu:1.3, sj:5.5, source:'RentCafe',
+    url:'https://www.rentcafe.com/housing/or/portland/kearney-house0/default.aspx',
+    notes:'INCOME RESTRICTED · 3BR/2BA units 205 and 504 shown available now · rooftop deck · no pets per Trulia' },
+
+  { id:'2456-Vaughn-Apt4', address:'2456 NW Vaughn St, Apt 4, Portland, OR 97210',
+    beds:3, baths:2, sqft:1000, rent:2200, neighborhood:'Northwest / Slabtown', zip:'97210',
+    type:'Apartment', psu:2.0, sj:4.8, source:'ForRent',
+    url:'https://www.forrent.com/or/portland/2456-nw-vaughn-st/mjgdwwh',
+    notes:'BEST BUDGET FIT · available now · no pets · street/on-street parking · verify HMC drive in traffic' },
+
+  { id:'2456-Vaughn-Apt3', address:'2456 NW Vaughn St, Apt 3, Portland, OR 97210',
+    beds:3, baths:1.5, sqft:1000, rent:2100, neighborhood:'Northwest / Slabtown', zip:'97210',
+    type:'Apartment', psu:2.0, sj:4.8, source:'HotPads',
+    url:'https://hotpads.com/2456-nw-vaughn-st-portland-or-97210-svyvz2/3/pad',
+    notes:'BUDGET FIT · same building as Apt 4 · available now · no pets' },
+
+  // ── CATHEDRAL PARK / UNIVERSITY PARK 97203 ───────
+  { id:'CathedralVillage-6520-Salem', address:'6520 N Salem Ave, Portland, OR 97203',
+    beds:3, baths:2, sqft:1050, rent:1731, neighborhood:'Cathedral Park / University Park', zip:'97203',
+    type:'Apartment', psu:5.7, sj:1.1, source:'Property',
+    url:'https://www.cathedralvillageapts.com/floorplans',
+    notes:'3BR/2BA floorplan, 1 available, starting at $1,731 · 1 block from Cathedral Park' },
+
+  { id:'5026-Harvard-UnitC', address:'5026 N Harvard St, Unit C, Portland, OR 97203',
+    beds:3, baths:2, sqft:900, rent:1995, neighborhood:'Cathedral Park / University Park', zip:'97203',
+    type:'Apartment', psu:4.8, sj:2.0, source:'Zillow',
+    url:'https://www.zillow.com/homedetails/5026-N-Harvard-St-C-Portland-OR-97203/443216528_zpid/',
+    notes:'STRONG FIT · available now/late Aug · off-street parking · AC · refrigerator' },
+
+  { id:'5329-Willamette', address:'5329 N Willamette Blvd, Portland, OR 97203',
+    beds:3, baths:1, sqft:1700, rent:2295, neighborhood:'Cathedral Park / University Park', zip:'97203',
+    type:'House', psu:5.0, sj:1.8, source:'Zillow',
+    url:'https://www.zillow.com/homedetails/5329-N-Willamette-Blvd-Portland-OR-97203/53936896_zpid/',
+    notes:'BATH NEAR MISS · single-family · pets OK · in-unit laundry · garage/private yard per rental sites · 1BA, below recalibrated 2BA preference' },
+
+  // ── ST. JOHNS / PORTSMOUTH 97203 ──────────────────
+  { id:'5777-Cecelia', address:'5701-5777 N Cecelia St, Portland, OR 97203',
+    beds:3, baths:1, sqft:943, rent:1350, neighborhood:'St. Johns / Portsmouth', zip:'97203',
+    type:'Apartment', psu:6.0, sj:1.6, source:'RentalSource',
+    url:'https://www.rentalsource.com/details/57015777-n-cecelia-portland-or-84110305/',
+    notes:'BATH NEAR MISS · very cheap · property may now be occupied, verify before spending time' },
+
+  { id:'PierPark-8660-Columbia', address:'8660 N Columbia Blvd, Portland, OR 97203',
+    beds:3, baths:1, sqft:1092, rent:1745, neighborhood:'St. Johns / Portsmouth', zip:'97203',
+    type:'Apartment', psu:6.7, sj:1.6, source:'Apartments.com',
+    url:'https://www.apartments.com/pier-park-portland-or/9jf9pf5/',
+    notes:'INCOME RESTRICTED 60% AMI · BATH NEAR MISS · 3BR/1BA available now · $550 deposit' },
+
+  { id:'10033-Lombard', address:'10033 N Lombard St, Portland, OR 97203',
+    beds:3, baths:1.5, sqft:1100, rent:2000, neighborhood:'St. Johns / Portsmouth', zip:'97203',
+    type:'Condo', psu:6.8, sj:1.0, source:'HotPads',
+    url:'https://hotpads.com/10033-n-lombard-st-portland-or-97203-smbj36/pad',
+    notes:'STARRED NEAR MISS · St. Johns fourplex/condo · small dogs and cats OK · in-unit laundry · parking · updated 11 days ago · 1.5BA, below recalibrated 2BA preference' },
+
+  { id:'9040-Richmond', address:'9040 N Richmond Ave, Portland, OR 97203',
+    beds:3, baths:2, sqft:1563, rent:2650, neighborhood:'St. Johns / Portsmouth', zip:'97203',
+    type:'House', psu:7.2, sj:0.5, source:'Apartments.com',
+    url:'https://www.apartments.com/9040-n-richmond-ave-portland-or/wbde44j/',
+    notes:'NEW MAX STRETCH · St. Johns house · 3BR/2BA · fenced yard · pets considered · garbage/recycling + landscaping included · walkable to downtown St. Johns' },
+
+  { id:'9322-Macrum-reference', address:'9322 N Macrum Ave, Portland, OR 97203',
+    beds:3, baths:2.5, sqft:1425, rent:2650, neighborhood:'St. Johns / Portsmouth', zip:'97203',
+    type:'House', psu:6.5, sj:0.6, source:'HotPads',
+    url:'https://hotpads.com/9322-n-macrum-ave-portland-or-97203-syfxpx/pad?utm_medium=referral&utm_source=native_share&utm_campaign=tellafriend',
+    notes:'STARRED STRETCH · the house/vibe benchmark you sent · pets OK · parking · in-unit laundry · now inside $2,650 max' },
+
+  // ── ARBOR LODGE / KENTON 97217 ───────────────────
+  { id:'FB-9126-Seward-reference', address:'9126 N Seward Ave, Portland, OR 97217',
+    beds:3, baths:2.5, sqft:1561, rent:2700, neighborhood:'Arbor Lodge / Kenton', zip:'97217',
+    type:'House', psu:6.3, sj:3.2, source:'Facebook',
+    url:'https://www.facebook.com/marketplace/item/1576986240746686/',
+    notes:'OVER-BUDGET REFERENCE · Facebook example you sent · newer Kenton house · pets OK up to 40 lb · garage · managed by Rent Portland Homes Professionals' },
+
+  { id:'Kentonwood-1575-Willis', address:'1575 N Willis Blvd, Portland, OR 97217',
+    beds:3, baths:2, sqft:741, rent:1760, neighborhood:'Arbor Lodge / Kenton', zip:'97217',
+    type:'Apartment', psu:5.0, sj:3.6, source:'Craigslist',
+    url:'https://www.craigslist.org/view/d/portland-street-parking-washer-dryer-in/vHFd5j15wM3aEQwXMrprV1',
+    notes:'ALL UTILITIES INCLUDED · INCOME RESTRICTED 60% AMI · no pets · small 3BR' },
+
+  { id:'6426-Maryland', address:'6426 N Maryland Ave, Portland, OR 97217',
+    beds:3, baths:2.5, sqft:1248, rent:2495, neighborhood:'Arbor Lodge / Kenton', zip:'97217',
+    type:'Townhouse', psu:4.0, sj:4.1, source:'RentalSource',
+    url:'https://www.rentalsource.com/details/6426-n-maryland-ave-portland-or-84158983/',
+    notes:'NEW TARGET FIT · 3BR/2.5BA townhouse · pet friendly · RentCast + RentalSource/Zillow cross-check · good midpoint location' },
+
+  // ── OVERLOOK / MISSISSIPPI 97217 ──────────────────
+  { id:'1725-Sumner', address:'1725 N Sumner St, Portland, OR 97217',
+    beds:3, baths:2, sqft:2100, rent:2575, neighborhood:'Overlook / Mississippi', zip:'97217',
+    type:'House', psu:3.6, sj:4.7, source:'Apartments.com',
+    url:'https://www.apartments.com/1725-n-sumner-st-portland-or/kyh269c/',
+    notes:'NEW STRETCH · Overlook house · 3BR/2BA · large 2,100 sqft · near N Killingsworth MAX · good PSU side, longer HMC side' },
+
+  { id:'FB-Shortstack-3325-Michigan', address:'3325 N Michigan Ave, Portland, OR 97227',
+    beds:3, baths:2, sqft:955, rent:2100, neighborhood:'Overlook / Mississippi', zip:'97227',
+    type:'Apartment', psu:2.8, sj:5.1, source:'Facebook',
+    url:'https://www.facebook.com/marketplace/item/1405429027197970/',
+    notes:'STARRED TARGET FIT · Shortstack Mississippi · Facebook detail page says 3BR/2BA · pets OK · central AC · laundry in building · street parking · verify bath count with manager because earlier public floorplan showed 1.5BA' },
+
+  { id:'RenaissanceCommons-2133-Argyle', address:'2133 N Argyle St, Portland, OR 97217',
+    beds:3, baths:2, sqft:1155, rent:1466, neighborhood:'Overlook / Mississippi', zip:'97217',
+    type:'Apartment', psu:3.6, sj:4.7, source:'Apartments.com',
+    url:'https://www.apartments.com/renaissance-commons-portland-or/j0s4275/',
+    notes:'INCOME RESTRICTED 60% AMI · 1155 sqft · built 2021 · verify current unit availability' },
+
+];
+
+const HOOD_ORDER = [
+  'Northwest / Slabtown', 'Cathedral Park / University Park', 'St. Johns / Portsmouth',
+  'Overlook / Mississippi', 'Arbor Lodge / Kenton'
+];
+
+let favs = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || JSON.stringify(INITIAL_FAVS)));
+let archs = new Set(JSON.parse(localStorage.getItem(ARCH_KEY) || JSON.stringify(INITIAL_ARCHS)));
+let showingArchived = false;
+
+function saveFavs() { localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); }
+function saveArchs() { localStorage.setItem(ARCH_KEY, JSON.stringify([...archs])); }
+
+function otd(listing) {
+  const isUtilIncl = listing.notes.includes('ALL UTILITIES INCLUDED');
+  return isUtilIncl ? listing.rent : listing.rent + 260;
+}
+
+function badge(listing) {
+  let s = '';
+  if (listing.source === 'CL')  s += '<span class="badge badge-cl">CL</span>';
+  if (['WEB','Zillow','HotPads','ForRent','RentCafe','Property','Apartments.com','RentalSource','Craigslist','Facebook'].includes(listing.source)) {
+    s += `<span class="badge badge-web">${listing.source}</span>`;
+  }
+  if (listing.notes.includes('INCOME RESTRICTED')) s += '<span class="badge badge-income">INCOME RESTRICTED</span>';
+  if (listing.notes.includes('ALL UTILITIES INCLUDED')) s += '<span class="badge badge-utils">UTILS INCL</span>';
+  if (listing.rent <= 2500 && listing.baths >= 2) s += '<span class="badge badge-fit">TARGET FIT</span>';
+  if (listing.rent > 2500 && listing.rent <= 2650 && listing.baths >= 2) s += '<span class="badge badge-stretch">STRETCH</span>';
+  if (listing.baths < 2) s += '<span class="badge badge-miss">BATH NEAR MISS</span>';
+  if (listing.rent > 2650) s += '<span class="badge badge-ref">REFERENCE</span>';
+  return s;
+}
+
+function makeRow(listing) {
+  const fav  = favs.has(listing.id);
+  const arch = archs.has(listing.id);
+  const eff  = otd(listing);
+  const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(listing.address)}`;
+
+  let addrHtml = listing.url
+    ? `<a class="primary-listing" href="${listing.url}">${listing.address}</a>`
+    : listing.address;
+  addrHtml += ` <a href="${mapsUrl}" class="listing">map ↗</a>`;
+  addrHtml += badge(listing);
+
+  const sqftStr = listing.sqft ? listing.sqft.toLocaleString() : '—';
+  const bathsStr = listing.baths ? listing.baths : '?';
+  const typeShort = listing.type === 'Single Family' ? 'House' : listing.type === 'Apartment' ? 'Apt' : listing.type;
+  const notesClean = listing.notes
+    .replace('ALL UTILITIES INCLUDED', '').replace('INCOME RESTRICTED 60% AMI', '').trim()
+    .replace(/^·\s*/, '').replace(/\s*·\s*$/, '');
+
+  const tr = document.createElement('tr');
+  tr.dataset.id = listing.id;
+  if (arch) tr.classList.add('archived');
+  if (fav) tr.classList.add('favorited');
+
+  tr.innerHTML = `
+    <td><button class="btn-fav ${fav ? 'active' : 'inactive'}" onclick="toggleFav('${listing.id}')" title="Favorite">${fav ? '♥' : '♡'}</button></td>
+    <td><button class="btn-arch" onclick="toggleArch('${listing.id}')" title="Archive / dismiss">✕</button></td>
+    <td class="rent">$${listing.rent.toLocaleString()}</td>
+    <td class="otd">$${eff.toLocaleString()}</td>
+    <td class="beds">${listing.beds}br/${bathsStr}ba</td>
+    <td>${sqftStr}</td>
+    <td class="dist">${listing.psu}</td>
+    <td class="dist">${listing.sj}</td>
+    <td>${typeShort}</td>
+    <td class="addr" onclick="openListing('${listing.id}', event)">${addrHtml}</td>
+    <td class="note">${notesClean}</td>`;
+  return tr;
+}
+
+function openListing(id, event) {
+  if (event.target.closest('a, button')) return;
+  const listing = LISTINGS.find(l => l.id === id);
+  if (listing && listing.url) window.location.href = listing.url;
+}
+
+function render() {
+  const favBody  = document.getElementById('fav-body');
+  const favHead  = document.getElementById('fav-header');
+  const favThead = document.getElementById('fav-thead');
+  const activeSections = document.getElementById('active-sections');
+  const archBody = document.getElementById('arch-body');
+  const archSec  = document.getElementById('arch-section');
+
+  favBody.innerHTML = '';
+  activeSections.innerHTML = '';
+  archBody.innerHTML = '';
+
+  const favorites = LISTINGS.filter(l => favs.has(l.id) && !archs.has(l.id));
+  const active    = LISTINGS.filter(l => !favs.has(l.id) && !archs.has(l.id));
+  const archived  = LISTINGS.filter(l => archs.has(l.id));
+
+  // Favorites block
+  if (favorites.length) {
+    favHead.classList.add('visible');
+    favThead.style.display = '';
+    favorites.forEach(l => favBody.appendChild(makeRow(l)));
+  } else {
+    favHead.classList.remove('visible');
+    favThead.style.display = 'none';
+  }
+
+  // Active by neighborhood
+  const hoods = HOOD_ORDER.filter(h => active.some(l => l.neighborhood === h));
+  hoods.forEach(hood => {
+    const div = document.createElement('div');
+    const label = document.createElement('div');
+    label.className = 'section-label';
+    label.textContent = hood;
+    div.appendChild(label);
+
+    const tbl = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `<tr>
+      <th></th><th></th><th>Rent</th><th>OTD est</th><th>Bed/Ba</th><th>Sqft</th>
+      <th>≈mi PSU</th><th>≈mi HMC</th><th>Type</th><th>Address</th><th>Notes</th>
+    </tr>`;
+    tbl.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    active.filter(l => l.neighborhood === hood)
+          .sort((a,b) => a.rent - b.rent)
+          .forEach(l => tbody.appendChild(makeRow(l)));
+    tbl.appendChild(tbody);
+    div.appendChild(tbl);
+    activeSections.appendChild(div);
+  });
+
+  // Archived block
+  if (archived.length) {
+    archSec.style.display = '';
+    archived.forEach(l => {
+      const tr = makeRow(l);
+      tr.classList.add('archived');
+      if (showingArchived) tr.classList.add('show-archived');
+      archBody.appendChild(tr);
+    });
+  } else {
+    archSec.style.display = 'none';
+  }
+
+  // Count
+  const total = LISTINGS.length;
+  const shown = favorites.length + active.length;
+  document.getElementById('count-line').textContent =
+    `${shown} of ${total} listings · ${favorites.length} favorite${favorites.length !== 1 ? 's' : ''} · ${archived.length} archived`;
+
+  document.getElementById('arch-btn').textContent = showingArchived
+    ? 'Hide archived' : `Show archived (${archived.length})`;
+}
+
+function toggleFav(id) {
+  if (favs.has(id)) { favs.delete(id); } else { favs.add(id); archs.delete(id); }
+  saveFavs(); saveArchs(); render();
+}
+function toggleArch(id) {
+  if (archs.has(id)) { archs.delete(id); } else { archs.add(id); favs.delete(id); }
+  saveFavs(); saveArchs(); render();
+}
+function toggleArchived() {
+  showingArchived = !showingArchived;
+  document.querySelectorAll('.archived').forEach(tr => {
+    if (showingArchived) tr.classList.add('show-archived');
+    else tr.classList.remove('show-archived');
+  });
+  document.getElementById('arch-btn').textContent = showingArchived
+    ? 'Hide archived' : `Show archived (${[...archs].length})`;
+}
+
+render();
+</script>
+</body>
+</html>
