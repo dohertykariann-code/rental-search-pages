@@ -105,24 +105,6 @@
 <script>
 const FAV_KEY  = 'rentalFav3br';
 const ARCH_KEY = 'rentalArchive3br';
-const INITIAL_FAVS = [
-  '5026-Harvard-UnitC',
-  'PierPark-8660-Columbia',
-  '10033-Lombard',
-  '9322-Macrum-reference',
-  'FB-Shortstack-3325-Michigan',
-  'FB-9126-Seward-reference',
-];
-const INITIAL_ARCHS = [
-  'KearneyHouse-824-NW20th',
-  '2456-Vaughn-Apt3',
-  '2456-Vaughn-Apt4',
-  'CathedralVillage-6520-Salem',
-  '5329-Willamette',
-  '5777-Cecelia',
-  'RenaissanceCommons-2133-Argyle',
-  'Kentonwood-1575-Willis',
-];
 
 const LISTINGS = [
   // ── NORTHWEST / SLABTOWN 97209-97210 ──────────────
@@ -194,6 +176,18 @@ const LISTINGS = [
     url:'https://hotpads.com/9322-n-macrum-ave-portland-or-97203-syfxpx/pad?utm_medium=referral&utm_source=native_share&utm_campaign=tellafriend',
     notes:'STARRED STRETCH · the house/vibe benchmark you sent · pets OK · parking · in-unit laundry · now inside $2,650 max' },
 
+  { id:'6941-Smith', address:'6941 N Smith St, Portland, OR 97203',
+    beds:3, baths:2.5, sqft:1456, rent:2695, neighborhood:'St. Johns / Portsmouth', zip:'97203',
+    type:'House', psu:5.9, sj:1.8, source:'Farrell',
+    url:'https://farrellrealty.com/rent/portland-rentals/8554/',
+    notes:'NEW ACTIVE OVER MAX · St. Johns house · available Sep 18 · applications open Aug 30 · fenced yard · attached garage · in-unit laundry · no pets' },
+
+  { id:'9612-Todd', address:'9612 N Todd St, Portland, OR 97203',
+    beds:3, baths:2, sqft:1276, rent:2995, neighborhood:'St. Johns / Portsmouth', zip:'97203',
+    type:'House', psu:7.1, sj:0.6, source:'Farrell',
+    url:'https://farrellrealty.com/rent/portland-rentals/11096/',
+    notes:'NEW ACTIVE EXPENSIVE · St. Johns ranch · available Oct 1 · pets allowed · fenced backyard · 2-car attached garage · washer/dryer · central AC' },
+
   // ── ARBOR LODGE / KENTON 97217 ───────────────────
   { id:'FB-9126-Seward-reference', address:'9126 N Seward Ave, Portland, OR 97217',
     beds:3, baths:2.5, sqft:1561, rent:2700, neighborhood:'Arbor Lodge / Kenton', zip:'97217',
@@ -213,7 +207,31 @@ const LISTINGS = [
     url:'https://www.rentalsource.com/details/6426-n-maryland-ave-portland-or-84158983/',
     notes:'NEW TARGET FIT · 3BR/2.5BA townhouse · pet friendly · RentCast + RentalSource/Zillow cross-check · good midpoint location' },
 
+  { id:'1033-Church', address:'1033 N Church St, Portland, OR 97217',
+    beds:3, baths:2.5, sqft:1400, rent:2695, neighborhood:'Arbor Lodge / Kenton', zip:'97217',
+    type:'Townhouse', psu:5.2, sj:4.0, source:'RentalSource',
+    url:'https://www.rentalsource.com/details/1033-n-church-st-portland-or-84219188/',
+    notes:'NEW ACTIVE OVER MAX · Kenton/Arbor Lodge townhouse · available Sep 7 per Zillow · pet friendly · in-unit laundry · attached garage · just above old max' },
+
+  { id:'8800-Drummond', address:'8800 N Drummond Ave, Portland, OR 97217',
+    beds:3, baths:2.5, sqft:1617, rent:2695, neighborhood:'Arbor Lodge / Kenton', zip:'97217',
+    type:'House', psu:6.0, sj:3.5, source:'Craigslist',
+    url:'https://www.craigslist.org/view/d/portland-charming-north-portland-bed-25/98D4vcHdPxcugyjCvZ2w3V',
+    notes:'NEW ACTIVE OVER MAX · Kenton house · available Sep 15 · A/C · washer/dryer · attached garage · no pets · updated Aug 24' },
+
+  { id:'7620-Curtis-A', address:'7620 N Curtis Ave #A, Portland, OR 97217',
+    beds:3, baths:3, sqft:1800, rent:2895, neighborhood:'Arbor Lodge / Kenton', zip:'97217',
+    type:'House', psu:5.7, sj:3.6, source:'Farrell',
+    url:'https://farrellrealty.com/rent/portland-rentals/kenton-gem-4/',
+    notes:'NEW ACTIVE EXPENSIVE · Kenton upper-level home · available Oct 16 · pets allowed · washer/dryer · attached garage · applications open Aug 30' },
+
   // ── OVERLOOK / MISSISSIPPI 97217 ──────────────────
+  { id:'2205-Willamette', address:'2205 N Willamette Blvd, Portland, OR 97217',
+    beds:3, baths:2, sqft:1212, rent:2995, neighborhood:'Overlook / Mississippi', zip:'97217',
+    type:'House', psu:3.4, sj:4.8, source:'Zillow',
+    url:'https://www.zillow.com/homedetails/2205-N-Willamette-Blvd-Portland-OR-97217/53967064_zpid/',
+    notes:'NEW ACTIVE EXPENSIVE · Overlook house · available now · cats/dogs OK · very good PSU side, longer HMC side' },
+
   { id:'1725-Sumner', address:'1725 N Sumner St, Portland, OR 97217',
     beds:3, baths:2, sqft:2100, rent:2575, neighborhood:'Overlook / Mississippi', zip:'97217',
     type:'House', psu:3.6, sj:4.7, source:'Apartments.com',
@@ -237,6 +255,16 @@ const LISTINGS = [
 const HOOD_ORDER = [
   'Northwest / Slabtown', 'Cathedral Park / University Park', 'St. Johns / Portsmouth',
   'Overlook / Mississippi', 'Arbor Lodge / Kenton'
+];
+
+const INITIAL_FAVS = [
+  '5026-Harvard-UnitC', 'PierPark-8660-Columbia', '10033-Lombard',
+  '9322-Macrum-reference', 'FB-Shortstack-3325-Michigan', 'FB-9126-Seward-reference'
+];
+const INITIAL_ARCHS = [
+  'KearneyHouse-824-NW20th', '2456-Vaughn-Apt3', '2456-Vaughn-Apt4',
+  'CathedralVillage-6520-Salem', '5329-Willamette', '5777-Cecelia',
+  'RenaissanceCommons-2133-Argyle', 'Kentonwood-1575-Willis'
 ];
 
 let favs = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || JSON.stringify(INITIAL_FAVS)));
