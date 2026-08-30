@@ -37,7 +37,6 @@
   .btn-fav.active { color: #e8a030; }
   .btn-fav.inactive { color: #504030; }
   .rent { font-weight: 700; color: #e8e0d0; white-space: nowrap; }
-  .otd { color: #9e9080; white-space: nowrap; font-size: 12px; }
   .beds { white-space: nowrap; }
   .dist { text-align: center; color: #c8b890; white-space: nowrap; }
   .addr { cursor: pointer; }
@@ -84,7 +83,7 @@
 <table id="fav-table">
   <thead id="fav-thead" style="display:none">
     <tr>
-      <th></th><th></th><th>Rent</th><th>OTD est</th><th>Bed/Ba</th><th>Sqft</th>
+      <th></th><th></th><th>Rent</th><th>Bed/Ba</th><th>Sqft</th>
       <th>≈mi PSU</th><th>≈mi HMC</th><th>Type</th><th>Address</th><th>Notes</th>
     </tr>
   </thead>
@@ -286,11 +285,6 @@ let showingArchived = false;
 function saveFavs() { localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); }
 function saveArchs() { localStorage.setItem(ARCH_KEY, JSON.stringify([...archs])); }
 
-function otd(listing) {
-  const isUtilIncl = listing.notes.includes('ALL UTILITIES INCLUDED');
-  return isUtilIncl ? listing.rent : listing.rent + 260;
-}
-
 function badge(listing) {
   let s = '';
   if (listing.source === 'CL')  s += '<span class="badge badge-cl">CL</span>';
@@ -309,7 +303,6 @@ function badge(listing) {
 function makeRow(listing) {
   const fav  = favs.has(listing.id);
   const arch = archs.has(listing.id);
-  const eff  = otd(listing);
   const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(listing.address)}`;
 
   let addrHtml = listing.url
@@ -334,7 +327,6 @@ function makeRow(listing) {
     <td><button class="btn-fav ${fav ? 'active' : 'inactive'}" onclick="toggleFav('${listing.id}')" title="Favorite">${fav ? '♥' : '♡'}</button></td>
     <td><button class="btn-arch" onclick="toggleArch('${listing.id}')" title="Archive / dismiss">✕</button></td>
     <td class="rent">$${listing.rent.toLocaleString()}</td>
-    <td class="otd">$${eff.toLocaleString()}</td>
     <td class="beds">${listing.beds}br/${bathsStr}ba</td>
     <td>${sqftStr}</td>
     <td class="dist">${listing.psu}</td>
@@ -389,7 +381,7 @@ function render() {
     const tbl = document.createElement('table');
     const thead = document.createElement('thead');
     thead.innerHTML = `<tr>
-      <th></th><th></th><th>Rent</th><th>OTD est</th><th>Bed/Ba</th><th>Sqft</th>
+      <th></th><th></th><th>Rent</th><th>Bed/Ba</th><th>Sqft</th>
       <th>≈mi PSU</th><th>≈mi HMC</th><th>Type</th><th>Address</th><th>Notes</th>
     </tr>`;
     tbl.appendChild(thead);
